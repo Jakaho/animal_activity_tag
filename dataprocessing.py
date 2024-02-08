@@ -1,4 +1,3 @@
-# %%
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -8,7 +7,38 @@ from scipy.signal import get_window
 import matplotlib.pyplot as plt
 
 
-# %%
+from scipy.signal import butter, filtfilt
+
+# Define the high-pass filter
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs  # Nyquist Frequency
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+# Apply the filter to a signal
+def highpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = filtfilt(b, a, data)
+    return y
+
+def ac_components(data, mode, cutoff, fs):
+    if mode == 'mean':
+       #Calculate DC components (mean values) for ax, ay, and az
+       dc = data.mean()
+       # Calculate AC components by subtracting DC component from each signal
+       ac = data - dc
+       return ac
+    elif mode == 'jerk':
+       #other paper calculated AC components via jerk (change in subsequent measurements)
+       ac = data.diff().fillna(0)
+       return ac
+    elif mode == 'HP':
+        ac = highpass_filter(data, cutoff, fs)
+        return ac
+    else:
+        raise ValueError(f"Invalid mode: {mode}")
+
 def import_and_downsample(filepath, plot):
     data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False)
 
@@ -55,27 +85,17 @@ def import_and_downsample(filepath, plot):
     
     windows_ac = []
 
-
+    fs = 10.0       # sample rate, Hz
+    cutoff = 0.3    # desired cutoff frequency of the filter, Hz
+    mode = 'HP'     # choose 'HP', 'mean' or 'jerk'
     for window in windows:
-        # Calculate DC components (mean values) for ax, ay, and az
-        dc_ax = window['ax'].mean()
-        dc_ay = window['ay'].mean()
-        dc_az = window['az'].mean()
+       
+        window['ac_ax'] = ac_components(window['ax'], mode, cutoff, fs)
+        window['ac_ay'] = ac_components(window['ay'], mode, cutoff, fs)
+        window['ac_az'] = ac_components(window['az'], mode, cutoff, fs)
         
-        # Calculate AC components by subtracting DC component from each signal
-        window['ac_ax'] = window['ax'] - dc_ax
-        window['ac_ay'] = window['ay'] - dc_ay
-        window['ac_az'] = window['az'] - dc_az
-        
-        #other paper calculated AC components via jerk (change in subsequent measurements)
-        window['jerk_ax'] = window['ax'].diff().fillna(0)
-        window['jerk_ay'] = window['ay'].diff().fillna(0)
-        window['jerk_az'] = window['az'].diff().fillna(0)
+        windows_ac.append(window)        
 
-        
-        windows_ac.append(window)
-        
-        
         #plotting both AC variants to see difference
     if plot ==True:
         plt.figure(figsize=(15, 6))
@@ -99,19 +119,6 @@ def import_and_downsample(filepath, plot):
             
     return windows_ac
 
-
-
-
-# %% [markdown]
-# 1. Divide the AC component into 1-second windows: Since your data is sampled at 25 Hz, a 1-second window will contain 25 samples.
-# 
-# 2. Apply the Hanning window function: This is a windowing function used to reduce the spectral leakage before performing the FFT.
-# 
-# 3. Compute the FFT for each window: Perform the FFT on each windowed segment of the AC component.
-# 
-# 4. Handle 50% overlap: When moving to the next window, you start at the halfway point of the current window, which means each window will overlap the previous one by 50%.
-
-# %%
 def process_window(windows_ac, windowID=None):
     sampling_rate = 25  # 25 Hz sampling rate
     window_size = sampling_rate  # 1-second window for 1 Hz resolution
@@ -181,6 +188,3 @@ def plot_signals(time_domain_signals, windowID, axis):
     plt.tight_layout()
     plt.show()
     
-
-
-
