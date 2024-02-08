@@ -138,7 +138,7 @@ def process_window(windows_ac, windowID=None):
         for ID in window_indices:
             # Initialize frequency bands for the current window and axis
             all_time_domain_signals[axis][ID] = {f: [] for f in range(6)}
-            window_data = windows_ac[ID][f'jerk_{axis}'].to_numpy()
+            window_data = windows_ac[ID][f'ac_{axis}'].to_numpy()
             
             for i in range(0, len(window_data) - window_size + 1, overlap):
                 window_segment = window_data[i:i+window_size] * hann_window
