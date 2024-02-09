@@ -39,8 +39,13 @@ def ac_components(data, mode, cutoff, fs):
     else:
         raise ValueError(f"Invalid mode: {mode}")
 
-def import_and_downsample(filepath, plot):
-    data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False)
+def import_and_downsample(filepath, plot, mode):
+    data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False) #change nulls to NaN
+    data = data.dropna(subset=['label']) #Drop NaN rows (undefined / other behavior)
+    categories_to_keep = ['walking', 'standing', 'grazing', 'eating']
+    # Filter the DataFrame
+    data= data[data['label'].isin(categories_to_keep)]
+
 
     filtered_data = data[['ax', 'ay', 'az', 'label', 'animal_ID', 'timestamp_ms']]
     data25 = filtered_data.iloc[::4, :].copy() #downsample 100Hz data to 25Hz data
@@ -87,14 +92,15 @@ def import_and_downsample(filepath, plot):
 
     fs = 10.0       # sample rate, Hz
     cutoff = 0.3    # desired cutoff frequency of the filter, Hz
-    mode = 'HP'     # choose 'HP', 'mean' or 'jerk'
+    #mode = 'HP'     # choose 'HP', 'mean' or 'jerk'
+    min_length = 18
     for window in windows:
-       
-        window['ac_ax'] = ac_components(window['ax'], mode, cutoff, fs)
-        window['ac_ay'] = ac_components(window['ay'], mode, cutoff, fs)
-        window['ac_az'] = ac_components(window['az'], mode, cutoff, fs)
-        
-        windows_ac.append(window)        
+       if len(window['ax']) >= min_length:
+            window['ac_ax'] = ac_components(window['ax'], mode, cutoff, fs)
+            window['ac_ay'] = ac_components(window['ay'], mode, cutoff, fs)
+            window['ac_az'] = ac_components(window['az'], mode, cutoff, fs)
+            
+            windows_ac.append(window)        
 
         #plotting both AC variants to see difference
     if plot ==True:
