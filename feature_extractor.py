@@ -1,9 +1,16 @@
 import numpy as np
 import dataprocessing
+from collections import Counter
 
 import pandas as pd
 from scipy.stats import kurtosis
 from scipy.stats import skew
+
+
+def get_majority_label(labels):
+    label_counts = Counter(labels)
+    majority_label = label_counts.most_common(1)[0][0]  # Get the most common label
+    return majority_label
 
 def extract_features(filepath):
     #filepath = 'datasets/pos_A.csv'
@@ -58,7 +65,7 @@ def extract_features(filepath):
         # Calculate average intensity
         amag = np.sqrt(window['ax']**2 + window['ay']**2 + window['az']**2)
         average_intensity.append(np.mean(amag))
-        label.append(window['label'])
+        label.append(get_majority_label(window['label'].tolist()))
 
     # Create a DataFrame from the features
     features_df = pd.DataFrame({
