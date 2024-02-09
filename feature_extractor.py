@@ -21,6 +21,7 @@ def extract_features(filepath):
     Q5_x, Q5_y, Q5_z = [], [], []
     Q95_x, Q95_y, Q95_z = [], [], []
     average_intensity = []
+    label = []
 
     # Process each window
     for window in windows_ac:
@@ -57,6 +58,7 @@ def extract_features(filepath):
         # Calculate average intensity
         amag = np.sqrt(window['ax']**2 + window['ay']**2 + window['az']**2)
         average_intensity.append(np.mean(amag))
+        label.append(window['label'])
 
     # Create a DataFrame from the features
     features_df = pd.DataFrame({
@@ -78,7 +80,8 @@ def extract_features(filepath):
         'Q95_x': Q95_x,
         'Q95_y': Q95_y,
         'Q95_z': Q95_z,
-        'average_intensity': average_intensity
+        'average_intensity': average_intensity,
+        'label': label
     })
 
     # Set the index name if needed
