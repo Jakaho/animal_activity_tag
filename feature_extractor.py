@@ -12,9 +12,9 @@ def get_majority_label(labels):
     majority_label = label_counts.most_common(1)[0][0]  # Get the most common label
     return majority_label
 
-def extract_features(filepath):
+def extract_features(filepath, mode):
     #filepath = 'datasets/pos_A.csv'
-    windows_ac = dataprocessing.import_and_downsample(filepath, False)  #
+    windows_ac = dataprocessing.import_and_downsample(filepath, False, mode)  #
     all_time_domain_signals = dataprocessing.process_window(windows_ac, None)
 
     features_df = pd.DataFrame()
