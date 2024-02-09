@@ -39,12 +39,11 @@ def ac_components(data, mode, cutoff, fs):
     else:
         raise ValueError(f"Invalid mode: {mode}")
 
-def import_and_downsample(filepath, plot, mode):
+def import_and_downsample(filepath, plot, mode, categories):
     data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False) #change nulls to NaN
     data = data.dropna(subset=['label']) #Drop NaN rows (undefined / other behavior)
-    categories_to_keep = ['walking', 'standing', 'grazing', 'eating']
     # Filter the DataFrame
-    data= data[data['label'].isin(categories_to_keep)]
+    data= data[data['label'].isin(categories)]
 
 
     filtered_data = data[['ax', 'ay', 'az', 'label', 'animal_ID', 'timestamp_ms']]
