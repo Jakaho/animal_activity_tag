@@ -147,6 +147,22 @@ def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False):
         
     if tagdata:
         windows_ac = [filtered_data.iloc[[i]].copy() for i in range(len(filtered_data))]
+        
+        cleaned_windows_ac = []
+
+        for window in windows_ac:
+            cleaned_window = {}  # Initialize a new dictionary for the current window
+            for axis in ['ax', 'ay', 'az', 'ac_ax', 'ac_ay', 'ac_az']:
+                # Check if the axis data is stored within a Series and has only one element
+                if isinstance(window[axis], pd.Series) and len(window[axis]) == 1:
+                    # Extract the numpy array directly
+                    cleaned_window[axis] = window[axis].iloc[0]
+                else:
+                    # If the data is already in the correct format, copy it directly
+                    cleaned_window[axis] = window[axis]
+            cleaned_windows_ac.append(cleaned_window)
+            windows_ac = cleaned_windows_ac
+
     return windows_ac
 
 
@@ -174,11 +190,7 @@ def process_window(windows_ac, windowID=None, tagdata=False):
         for ID in window_indices:
             # Initialize frequency bands for the current window and axis
             all_time_domain_signals[axis][ID] = {f: [] for f in range(6)}
-            
-            if tagdata:
-                window_data = windows_ac[ID][f'ac_{axis}'].to_numpy()[0]
-            else:
-                window_data = windows_ac[ID][f'ac_{axis}'].to_numpy()
+            window_data = windows_ac[ID][f'ac_{axis}']
             #print(window_data)
             #print(len(window_data)) == 1??? varför
             for i in range(0, len(window_data) - window_size + 1, overlap):
