@@ -160,7 +160,7 @@ def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False):
                     # If the data is already in the correct format, copy it directly
                     cleaned_window[axis] = window[axis]
             cleaned_windows_ac.append(cleaned_window)
-            windows_ac = cleaned_windows_ac
+        windows_ac = cleaned_windows_ac
 
     return windows_ac
 
@@ -189,7 +189,7 @@ def process_window(windows_ac, windowID=None, tagdata=False):
             all_time_domain_signals[axis][ID] = {f: [] for f in range(6)}
             
             if tagdata:
-                window_data = windows_ac[ID][f'ac_{axis}'].to_numpy()[0]
+                window_data = windows_ac[ID][f'ac_{axis}']
             else:
                 window_data = windows_ac[ID][f'ac_{axis}'].to_numpy()
             #print(window_data)
