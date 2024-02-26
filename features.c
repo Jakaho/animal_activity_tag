@@ -6,12 +6,18 @@ typedef struct {
     float mean_x;
     float mean_y;
     float mean_z;
+    int16_t max_x;
+    int16_t max_y;
+    int16_t max_z;
+    int16_t min_x;
+    int16_t min_y;
+    int16_t min_z;
     // Add more features as needed
 } AccFeatures;
 
 void separate_axes(int16_t** x_data, int16_t** y_data, int16_t** z_data, size_t* total_length) {
     // Example data array
-    int data[] = {-10,77,304,3,54,373,6,46,488,77,-114,511,-113,181,511,-9,-18,209,-68,-81,242,41,-88,66,-13,
+    int16_t data[] = {-10,77,304,3,54,373,6,46,488,77,-114,511,-113,181,511,-9,-18,209,-68,-81,242,41,-88,66,-13,
     -55,135,-20,-19,169,-46,27,212,-64,51,275,-52,112,356,-51,208,449,-66,439,479,-131,498,284,-148,511,93,
     -117,445,222,415,-512,-288,160,505,194,-125,389,384,36,201,231,-27,78,245,0,93,237,-6,79,245,2,83,238,-27,
     75,240,-40,88,236,-3,96,235,-28,116,218,-37,148,209,-35,148,221,-15,159,288,-19,132,337,22,72,462,-37,-85,
@@ -52,12 +58,41 @@ float calculate_mean(int16_t* data, size_t length) {
     return sum / length;
 }
 
+int calculate_max(int16_t* data, size_t length){
+    int16_t current_max = 0;
+    for (size_t i = 0; i < length; ++i){
+        if(data[i] > current_max){
+        current_max = data[i];
+        }
+    }
+    return current_max;
+}
+
+int calculate_min(int16_t* data, size_t length){
+    int16_t current_min = 1000;
+    for (size_t i = 0; i < length; ++i){
+        if(data[i] < current_min){
+        current_min = data[i];
+        }
+    }
+    return current_min;
+}
+
 
 AccFeatures calculate_features(int16_t* x_data, int16_t* y_data, int16_t* z_data, size_t length) {
     AccFeatures features;
     features.mean_x = calculate_mean(x_data, length);
     features.mean_y = calculate_mean(y_data, length);
     features.mean_z = calculate_mean(z_data, length);
+
+    features.max_x = calculate_max(x_data, length);
+    features.max_y = calculate_max(y_data, length);
+    features.max_z = calculate_max(z_data, length);
+
+    features.min_x = calculate_min(x_data, length);
+    features.min_y = calculate_min(y_data, length);
+    features.min_z = calculate_min(z_data, length);
+
     // Calculate and assign more features as needed
     return features;
 }
@@ -68,14 +103,6 @@ int main() {
 
     separate_axes(&x_data, &y_data, &z_data, &total_length);
 
-    // Use x_data, y_data, and z_data...
-    // For example, print the first few elements
-    for (size_t i = 0; i < 5 && i < total_length; ++i) {
-        printf("X: %d, Y: %d, Z: %d\n", x_data[i], y_data[i], z_data[i]);
-    }
-
-
-
     AccFeatures features = calculate_features(x_data, y_data, z_data, total_length);
 
     // Example usage
@@ -83,12 +110,13 @@ int main() {
     printf("Mean Acc Y: %f\n", features.mean_y);
     printf("Mean Acc Z: %f\n", features.mean_z);
 
+    printf("Max Acc X: %d\n", features.max_x);
+    printf("Max Acc Y: %d\n", features.max_y);
+    printf("Max Acc Z: %d\n", features.max_z);
 
-
-
-
-
-
+    printf("Min Acc X: %d\n", features.min_x);
+    printf("Min Acc Y: %d\n", features.min_y);
+    printf("Min Acc Z: %d\n", features.min_z);
 
     // Remember to free the allocated memory when no longer needed
     free(x_data);
