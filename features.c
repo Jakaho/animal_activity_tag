@@ -6,12 +6,23 @@ typedef struct {
     float mean_x;
     float mean_y;
     float mean_z;
+
     int16_t max_x;
     int16_t max_y;
     int16_t max_z;
+
     int16_t min_x;
     int16_t min_y;
     int16_t min_z;
+
+    int16_t Q5_x;
+    int16_t Q5_y;
+    int16_t Q5_z;
+
+    int16_t Q95_x;
+    int16_t Q95_y;
+    int16_t Q95_z;
+
     // Add more features as needed
 } AccFeatures;
 
@@ -77,10 +88,47 @@ int calculate_min(int16_t* data, size_t length){
     }
     return current_min;
 }
+void swap(int16_t* a, int16_t* b) {
+    int16_t temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(int16_t arr[], int low, int high) {
+    int16_t pivot = arr[high];
+    int i = (low - 1);
+
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
+}
+
+int16_t quickSelect(int16_t arr[], int low, int high, int k) {
+    if (k > 0 && k <= high - low + 1) {
+        int index = partition(arr, low, high);
+
+        if (index - low == k - 1)
+            return arr[index];
+        if (index - low > k - 1)
+            return quickSelect(arr, low, index - 1, k);
+
+        return quickSelect(arr, index + 1, high, k - index + low - 1);
+    }
+
+    return INT16_MAX;
+}
+
 
 
 AccFeatures calculate_features(int16_t* x_data, int16_t* y_data, int16_t* z_data, size_t length) {
     AccFeatures features;
+    int Q5 = 3;
+    int Q95 = 58;
     features.mean_x = calculate_mean(x_data, length);
     features.mean_y = calculate_mean(y_data, length);
     features.mean_z = calculate_mean(z_data, length);
@@ -93,6 +141,14 @@ AccFeatures calculate_features(int16_t* x_data, int16_t* y_data, int16_t* z_data
     features.min_y = calculate_min(y_data, length);
     features.min_z = calculate_min(z_data, length);
 
+    features.Q5_x = quickSelect(x_data, 0, length, Q5);
+    features.Q5_y = quickSelect(y_data, 0, length, Q5);
+    features.Q5_z = quickSelect(z_data, 0, length, Q5);
+
+    features.Q95_x = quickSelect(x_data, 0, length, Q95);
+    features.Q95_y = quickSelect(y_data, 0, length, Q95);
+    features.Q95_z = quickSelect(z_data, 0, length, Q95);
+
     // Calculate and assign more features as needed
     return features;
 }
@@ -100,7 +156,6 @@ AccFeatures calculate_features(int16_t* x_data, int16_t* y_data, int16_t* z_data
 int main() {
     int16_t *x_data, *y_data, *z_data;
     size_t total_length = 60;
-
     separate_axes(&x_data, &y_data, &z_data, &total_length);
 
     AccFeatures features = calculate_features(x_data, y_data, z_data, total_length);
@@ -117,6 +172,17 @@ int main() {
     printf("Min Acc X: %d\n", features.min_x);
     printf("Min Acc Y: %d\n", features.min_y);
     printf("Min Acc Z: %d\n", features.min_z);
+
+    printf("Q5 Acc X: %d\n", features.Q5_x);
+    printf("Q5 Acc Y: %d\n", features.Q5_y);
+    printf("Q5 Acc Z: %d\n", features.Q5_z);
+
+    printf("Q95 Acc X: %d\n", features.Q95_x);
+    printf("Q95 Acc Y: %d\n", features.Q95_y);
+    printf("Q95 Acc Z: %d\n", features.Q95_z);
+
+   
+    return 0;
 
     // Remember to free the allocated memory when no longer needed
     free(x_data);
