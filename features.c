@@ -123,6 +123,22 @@ int16_t quickSelect(int16_t arr[], int low, int high, int k) {
     return INT16_MAX;
 }
 
+float* calculate_dynamic_components(int16_t* data, size_t length) {
+    if(length < 2) return NULL; // Not enough data to compute differences
+
+    float* dyn_components = (float*)malloc((length - 1) * sizeof(float));
+    if (!dyn_components) {
+        printf("Memory allocation failed for dynamic components\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (size_t i = 0; i < length - 1; i++) {
+        dyn_components[i] = (float)(data[i + 1] - data[i]);
+    }
+
+    return dyn_components;
+}
+
 
 
 AccFeatures calculate_features(int16_t* x_data, int16_t* y_data, int16_t* z_data, size_t length) {
@@ -160,30 +176,19 @@ int main() {
 
     AccFeatures features = calculate_features(x_data, y_data, z_data, total_length);
 
-    // Example usage
-    printf("Mean Acc X: %f\n", features.mean_x);
-    printf("Mean Acc Y: %f\n", features.mean_y);
-    printf("Mean Acc Z: %f\n", features.mean_z);
 
-    printf("Max Acc X: %d\n", features.max_x);
-    printf("Max Acc Y: %d\n", features.max_y);
-    printf("Max Acc Z: %d\n", features.max_z);
+    // Calculate dynamic components for each axis, filters out steady/background acceleration like gravity. 
+    float *dyn_x = calculate_dynamic_components(x_data, total_length);
+    float *dyn_y = calculate_dynamic_components(y_data, total_length);
+    float *dyn_z = calculate_dynamic_components(z_data, total_length);
 
-    printf("Min Acc X: %d\n", features.min_x);
-    printf("Min Acc Y: %d\n", features.min_y);
-    printf("Min Acc Z: %d\n", features.min_z);
-
-    printf("Q5 Acc X: %d\n", features.Q5_x);
-    printf("Q5 Acc Y: %d\n", features.Q5_y);
-    printf("Q5 Acc Z: %d\n", features.Q5_z);
-
-    printf("Q95 Acc X: %d\n", features.Q95_x);
-    printf("Q95 Acc Y: %d\n", features.Q95_y);
-    printf("Q95 Acc Z: %d\n", features.Q95_z);
-
+    // Example usage of AC components (here we just print the first few for demonstration)
+    printf("First few dynamic components for X-axis:\n");
+    for (size_t i = 0; i < 5 && i < total_length - 1; i++) {
+        printf("%.2f ", dyn_x[i]);
+    }
+    printf("\n");
    
-    return 0;
-
     // Remember to free the allocated memory when no longer needed
     free(x_data);
     free(y_data);
