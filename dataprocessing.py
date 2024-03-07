@@ -22,7 +22,6 @@ def process_new_format(filepath):
     column_names = ['tag_id', 'unknown1', 'timestamp', 'acc_data', 'label']
     data.columns = column_names
     data[['ax', 'ay', 'az']] = pd.DataFrame(data['acc_data'].apply(parse_acc_data).tolist(), index=data.index)
-    data.to_csv('csvtest.csv')
     return data[['ax', 'ay', 'az', 'label', 'timestamp']]
 
 # Define the high-pass filter
