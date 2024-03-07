@@ -12,10 +12,10 @@ def get_majority_label(labels):
     majority_label = label_counts.most_common(1)[0][0]  # Get the most common label
     return majority_label
 
-def extract_features(filepath, mode, categories):
+def extract_features(filepath, mode, categories, tagdata):
     #filepath = 'datasets/pos_A.csv'
-    windows_ac = dataprocessing.import_and_downsample(filepath, False, mode, categories)  #
-    all_time_domain_signals = dataprocessing.process_window(windows_ac, None)
+    windows_ac = dataprocessing.import_and_downsample(filepath, False, mode, categories, tagdata)  #
+    all_time_domain_signals = dataprocessing.process_window(windows_ac, None, tagdata)
 
     features_df = pd.DataFrame()
     #RAW ACCELEROMETER DATA
@@ -65,7 +65,10 @@ def extract_features(filepath, mode, categories):
         # Calculate average intensity
         amag = np.sqrt(window['ax']**2 + window['ay']**2 + window['az']**2)
         average_intensity.append(np.mean(amag))
-        label.append(get_majority_label(window['label'].tolist()))
+        if tagdata ==False:
+            label.append(get_majority_label(window['label'].tolist()))
+        else:
+            label.append(window['label'])
 
     # Create a DataFrame from the features
     features_df = pd.DataFrame({

@@ -18,12 +18,12 @@ def parse_acc_data(row):
     return reshaped_values[:, 0], reshaped_values[:, 1], reshaped_values[:, 2]
 
 def process_new_format(filepath):
-    filepath = '../datasets/Fredrik_funny_walk.csv'
-    data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False)
-    column_names = ['unknown1', 'unknown2', 'tag_id', 'unknown3', 'unknown4', 'lat', 'long', 'timestamp', 'unknown5', 'acc_data']
+    data = pd.read_csv(filepath, na_values='null', low_memory=False)
+    column_names = ['tag_id', 'unknown1', 'timestamp', 'acc_data', 'label']
     data.columns = column_names
     data[['ax', 'ay', 'az']] = pd.DataFrame(data['acc_data'].apply(parse_acc_data).tolist(), index=data.index)
-    return data
+    data.to_csv('csvtest.csv')
+    return data[['ax', 'ay', 'az', 'label', 'timestamp']]
 
 # Define the high-pass filter
 def butter_highpass(cutoff, fs, order=5):
@@ -58,7 +58,9 @@ def ac_components(data, mode, cutoff, fs):
 def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False):
     if tagdata == True:
         data = process_new_format(filepath)
-        filtered_data = data[['ax', 'ay', 'az']].copy()
+        data= data[data['label'].isin(categories)] 
+        filtered_data = data[['ax', 'ay', 'az', 'label', 'timestamp']].copy()
+        
         
     else:  
         data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False) #change nulls to NaN
@@ -151,7 +153,7 @@ def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False):
 
         for window in windows_ac:
             cleaned_window = {}  # Initialize a new dictionary for the current window
-            for axis in ['ax', 'ay', 'az', 'ac_ax', 'ac_ay', 'ac_az']:
+            for axis in ['ax', 'ay', 'az', 'ac_ax', 'ac_ay', 'ac_az', 'label']:
                 # Check if the axis data is stored within a Series and has only one element
                 if isinstance(window[axis], pd.Series) and len(window[axis]) == 1:
                     # Extract the numpy array directly
