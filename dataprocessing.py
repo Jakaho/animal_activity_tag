@@ -24,6 +24,8 @@ def process_new_format(filepath):
     data[['ax', 'ay', 'az']] = pd.DataFrame(data['acc_data'].apply(parse_acc_data).tolist(), index=data.index)
     return data[['ax', 'ay', 'az', 'label', 'timestamp']]
 
+
+
 # Define the high-pass filter
 def butter_highpass(cutoff, fs, order=5):
     nyq = 0.5 * fs  # Nyquist Frequency
@@ -54,12 +56,52 @@ def ac_components(data, mode, cutoff, fs):
     else:
         raise ValueError(f"Invalid mode: {mode}")
 
-def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False):
+def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False, combine = False):
     if tagdata == True:
         data = process_new_format(filepath)
         data= data[data['label'].isin(categories)] 
         filtered_data = data[['ax', 'ay', 'az', 'label', 'timestamp']].copy()
         
+        if combine == True:
+            # Initialize lists to hold aggregated data
+            all_ax, all_ay, all_az, all_labels = [], [], [], []
+
+            for i in range(0, len(filtered_data) - 3, 4):  # Adjusted loop to avoid out-of-bounds
+                # Aggregate ax, ay, az using .iloc for correct DataFrame row access
+                ax_combined = np.concatenate([filtered_data.iloc[j]['ax'] for j in range(i, i+4)])
+                ay_combined = np.concatenate([filtered_data.iloc[j]['ay'] for j in range(i, i+4)])
+                az_combined = np.concatenate([filtered_data.iloc[j]['az'] for j in range(i, i+4)])
+                
+                # Find the majority label in the current window
+                labels_window = [filtered_data.iloc[j]['label'] for j in range(i, i+4)]
+                majority_label = max(set(labels_window), key=labels_window.count)
+                
+                # Append aggregated data to lists
+                all_ax.append(ax_combined)
+                all_ay.append(ay_combined)
+                all_az.append(az_combined)
+                all_labels.append(majority_label)
+
+            # Create a new DataFrame with the aggregated data
+            new_df = pd.DataFrame({
+                'ax': all_ax,
+                'ay': all_ay,
+                'az': all_az,
+                'label': all_labels
+            })
+
+
+            # Display the new DataFrame
+            
+            filtered_data = new_df
+                
+            
+
+            
+
+
+            
+
         
     else:  
         data = pd.read_csv(filepath, dtype={'label': str}, na_values='null', low_memory=False) #change nulls to NaN
