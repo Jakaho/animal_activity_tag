@@ -35,10 +35,17 @@ labels_df['To'] = (pd.to_datetime(date + ' ' + labels_df['To']).astype(int) / 10
 
 sorted_df['Behavior'] = None
 
+
+sorted_df['Window End'] = sorted_df['UNIX Timestamp'] + 2400  # Adding 2.4 seconds in milliseconds
+
 # Loop through the labels DataFrame and assign labels to the accelerometer data
 for index, row in labels_df.iterrows():
-    mask = (sorted_df['UNIX Timestamp'] >= row['From']) & (sorted_df['UNIX Timestamp'] < row['To'])
+    # Adjust the mask to consider the full duration of the data window
+    mask = (sorted_df['UNIX Timestamp'] >= row['From']) & (sorted_df['Window End'] <= row['To'])
     sorted_df.loc[mask, 'Behavior'] = row['Behavior']
+    
+sorted_df.loc[sorted_df['Behavior'].isnull(), 'Behavior'] = 'transition'
+
 
 
 
