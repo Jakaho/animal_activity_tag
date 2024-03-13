@@ -19,7 +19,7 @@ def parse_acc_data(row):
 
 def process_new_format(filepath):
     data = pd.read_csv(filepath, na_values='null', low_memory=False)
-    column_names = ['tag_id', 'unknown1', 'timestamp', 'acc_data', 'label']
+    column_names = ['tag_id', 'unknown1', 'timestamp', 'acc_data', 'label', 'window_end']
     data.columns = column_names
     data[['ax', 'ay', 'az']] = pd.DataFrame(data['acc_data'].apply(parse_acc_data).tolist(), index=data.index)
     return data[['ax', 'ay', 'az', 'label', 'timestamp']]
@@ -65,9 +65,12 @@ def import_and_downsample(filepath, plot, mode, categories=None, tagdata=False, 
         if combine == True:
             # Initialize lists to hold aggregated data
             all_ax, all_ay, all_az, all_labels = [], [], [], []
-
+            #-1, 2 for 2 rows
+            #-3, 4 for 4 rows
             for i in range(0, len(filtered_data) - 3, 4):  # Adjusted loop to avoid out-of-bounds
                 # Aggregate ax, ay, az using .iloc for correct DataFrame row access
+                
+                #i+nrofrows
                 ax_combined = np.concatenate([filtered_data.iloc[j]['ax'] for j in range(i, i+4)])
                 ay_combined = np.concatenate([filtered_data.iloc[j]['ay'] for j in range(i, i+4)])
                 az_combined = np.concatenate([filtered_data.iloc[j]['az'] for j in range(i, i+4)])
@@ -262,6 +265,76 @@ def process_window(windows_ac, windowID=None, tagdata=False):
     
     # If no specific windowID is provided, all_time_domain_signals contains all axes for all windows
     return all_time_domain_signals
+
+
+
+
+def process_segmented_signals(signal, sampling_rate=25, segment_length=0.25, overlap=0.125):
+    segment_size = int(segment_length * sampling_rate)
+    step_size = segment_size - int(segment_size * overlap)
+    hann_window = get_window('hann', segment_size)
+    fft_magnitude_features = []
+
+    start = 0
+    while True:
+        end = start + segment_size
+        # Adjust the last window to make sure all data is used
+        if end > len(signal) and start < len(signal):
+            end = len(signal)
+            start = end - segment_size
+            if start < 0: start = 0  # Ensure start is not negative
+            windowed_segment = signal[start:end] * hann_window[:end-start]
+        elif end <= len(signal):
+            windowed_segment = signal[start:end] * hann_window
+        else:
+            break  # Exit the loop if the end exceeds signal length and adjustment is not possible
+
+        fft_result = fft(windowed_segment, n=segment_size)
+        magnitude_features = [np.abs(fft_result[f]) for f in range(6)]
+        fft_magnitude_features.append(magnitude_features)
+        
+        start += step_size
+        if start + segment_size > len(signal) and end == len(signal):
+            break  # Break if next start point would exceed signal length and all data have been used
+
+    return fft_magnitude_features
+
+
+def process_ac_signals(data, sampling_rate=25):
+    fft_features = {axis: {} for axis in ['ac_ax', 'ac_ay', 'ac_az']}
+
+    for window_id, row in enumerate(data):  # Use enumerate to get index (window_id) and row
+        for axis in ['ac_ax', 'ac_ay', 'ac_az']:
+            signal = np.array(row[axis])
+            
+            # Check and adjust if signal is nested
+            if isinstance(signal[0], (list, np.ndarray)):
+                signal = np.concatenate(signal)  # Flatten if nested
+
+            # Process the signal in segments and store magnitude features
+            segmented_magnitude_features = process_segmented_signals(signal, sampling_rate=sampling_rate, segment_length=1, overlap=0.5)
+            
+            # Instead of initializing storage for window_id if not present,
+            # Directly store all segment magnitudes for each band
+            for band in range(6):
+                # Store all magnitude features from segments directly, without aggregation
+                magnitudes_for_band = [feature[band] for feature in segmented_magnitude_features]
+                if window_id not in fft_features[axis]:
+                    fft_features[axis][window_id] = {}
+                fft_features[axis][window_id][band] = magnitudes_for_band
+
+    return fft_features
+
+
+# Assuming 'data' is your structured input, where each item in the list is a row represented as a dictionary
+# Example usage:
+# test = process_ac_signals(hmmge)
+
+
+# Assuming 'data' is a list of dictionaries, where each dictionary represents a row with 'window_id' and signal data
+# Example usage:
+# test = process_ac_signals(data)
+
 def plot_signals(time_domain_signals, windowID, axis):
     time_vector = np.linspace(0, 10, num=len(time_domain_signals[0]), endpoint=False)
     plt.figure(figsize=(15, 6))
