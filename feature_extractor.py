@@ -15,7 +15,7 @@ def get_majority_label(labels):
 def extract_features(filepath, mode, categories, tagdata, combine):
     #filepath = 'datasets/pos_A.csv'
     windows_ac = dataprocessing.import_and_downsample(filepath, False, mode, categories, tagdata, combine)  #
-    all_time_domain_signals = dataprocessing.process_window(windows_ac, None, tagdata)
+    all_time_domain_signals = dataprocessing.process_ac_signals(windows_ac)
 
     features_df = pd.DataFrame()
     #RAW ACCELEROMETER DATA
@@ -103,6 +103,8 @@ def extract_features(filepath, mode, categories, tagdata, combine):
     mean_ac_x, mean_ac_y, mean_ac_z = [], [], []
     std_ac_x, std_ac_y, std_ac_z = [], [], []
     max_ac_x, max_ac_y, max_ac_z = [], [], []
+    min_ac_x, min_ac_y, min_ac_z = [], [], []
+
     Q5_acx, Q5_acy, Q5_acz = [], [], []
     Q95_acx, Q95_acy, Q95_acz = [], [], []
     kurt_acx, kurt_acy, kurt_acz = [], [], []
@@ -121,6 +123,10 @@ def extract_features(filepath, mode, categories, tagdata, combine):
         max_ac_x.append(window['ac_ax'].max())
         max_ac_y.append(window['ac_ay'].max())
         max_ac_z.append(window['ac_az'].max())
+        
+        min_ac_x.append(window['ac_ax'].min())
+        min_ac_y.append(window['ac_ay'].min())
+        min_ac_z.append(window['ac_az'].min())
 
         Q5_acx.append(np.percentile(window['ac_ax'], 5))
         Q5_acy.append(np.percentile(window['ac_ay'], 5))
